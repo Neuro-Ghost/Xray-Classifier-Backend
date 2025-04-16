@@ -3,7 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 import numpy as np
 from utils import preprocess_image
+from huggingface_hub import hf_hub_download
 
+model_path = hf_hub_download(repo_id="atoxy/xray-classifier-model", filename="xray_model.h5")
+model = tf.keras.models.load_model(model_path)
 app = FastAPI()
 
 app.add_middleware(
