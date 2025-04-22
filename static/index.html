@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>X-ray Classifier</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #f9f9f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        background: #fff;
+        padding: 30px 40px;
+        border-radius: 12px;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 400px;
+      }
+
+      h1 {
+        color: #222;
+        margin-bottom: 20px;
+      }
+
+      #dropArea {
+        border: 2px dashed #4caf50;
+        border-radius: 10px;
+        padding: 30px;
+        background-color: #f6fff6;
+        cursor: pointer;
+        color: #333;
+        margin-bottom: 20px;
+        transition: 0.3s ease;
+      }
+
+      #dropArea.dragover {
+        background-color: #e1fce1;
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      #result {
+        margin-top: 20px;
+        font-size: 18px;
+        color: #333;
+        line-height: 1.6;
+      }
+
+      .file-info {
+        font-size: 14px;
+        color: #888;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🩻 X-ray Classifier</h1>
+
+      <div id="dropArea">
+        Drag & drop image here or click to upload
+        <input
+          type="file"
+          id="imageInput"
+          accept="image/*"
+          style="display: none"
+        />
+      </div>
+
+      <div class="file-info" id="fileName"></div>
+      <button onclick="predict()">Predict</button>
+
+      <div id="result"></div>
+    </div>
+
+    <script>
+      const dropArea = document.getElementById("dropArea");
+      const fileInput = document.getElementById("imageInput");
+      const fileName = document.getElementById("fileName");
+      let uploadedFile = null; // 🟢 Store the file here
+
+      dropArea.addEventListener("click", () => fileInput.click());
+
+      dropArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropArea.classList.add("dragover");
+      });
+
+      dropArea.addEventListener("dragleave", () => {
+        dropArea.classList.remove("dragover");
+      });
+
+      dropArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropArea.classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          uploadedFile = files[0]; // 🟢 Store the dropped file
+          fileName.textContent = `📁 Selected: ${uploadedFile.name}`;
+        }
+      });
+
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files.length > 0) {
+          uploadedFile = fileInput.files[0]; // 🟢 Store the selected file
+          fileName.textContent = `📁 Selected: ${uploadedFile.name}`;
+        }
+      });
+
+      async function predict() {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "⏳ Predicting...";
+
+        if (!uploadedFile) {
+          resultDiv.innerHTML = "⚠️ Please select an image first.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", uploadedFile); // ✅ Use the right file
+
+        try {
+          const res = await fetch("http://127.0.0.1:8000/predict", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json();
+
+          resultDiv.innerHTML = `
+            🔍 <strong>Predicted:</strong> <span style="color:#4CAF50">${
+              data.class
+            }</span><br>
+            📊 <strong>Confidence:</strong> ${(data.confidence * 100).toFixed(
+              2
+            )}%
+          `;
+        } catch (err) {
+          console.error(err);
+          resultDiv.innerHTML = "❌ Error contacting backend.";
+        }
+      }
+    </script>
+  </body>
+</html>
