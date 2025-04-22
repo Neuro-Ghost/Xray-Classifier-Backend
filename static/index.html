@@ -115,14 +115,43 @@
         background: #1e1e1e;
         box-shadow: 0 0 25px rgba(255, 255, 255, 0.05);
       }
+      .pulse-wrapper {
+        min-width: 950px; /* keeps space for both card and image */
+        position: relative;
+      }
+
+      .card-layout {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .classifier-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+        width: 800px; /* ✅ Fixed width to prevent shifting */
+        min-height: 350px; /* optional, to stabilize height */
+        position: relative;
+        margin-left: 279px;
+      }
 
       .image-side {
-        display: none;
+        width: 250px;
+        height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        visibility: hidden; /* ✅ takes space, but hidden */
       }
 
       .image-side img {
-        max-width: 250px;
-        max-height: 250px;
+        max-width: 100%;
+        max-height: 100%;
         border-radius: 10px;
         border: 1px solid #ddd;
         box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
@@ -243,6 +272,85 @@
           stroke-dasharray: 0 100;
         }
       }
+      #historySection {
+        position: absolute;
+        top: 120px;
+        left: 30px;
+        background: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 280px;
+        font-size: 14px;
+      }
+
+      #historyToggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      #historyList {
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+      }
+
+      .history-item {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 6px;
+        margin-right: 5px;
+        cursor: pointer;
+      }
+
+      .history-details {
+        display: none;
+        font-size: 13px;
+        margin-top: 7px;
+        margin-left: 10px;
+        color: #555;
+      }
+      body.dark .history-details {
+        color: #ccc;
+        background-color: #1a1a1a;
+      }
+      body.dark .history-item {
+        background-color: #1a1a1a;
+        color: #eee;
+      }
+      body.dark #historySection {
+        background: #1a1a1a;
+        color: #eee;
+      }
+      #historyList::-webkit-scrollbar {
+        width: 8px; /* width of the scrollbar */
+        margin-left: 5px;
+      }
+
+      #historyList::-webkit-scrollbar-thumb {
+        background: #888; /* scrollbar color */
+        border-radius: 4px;
+      }
+
+      #historyList::-webkit-scrollbar-thumb:hover {
+        background: #555; /* hover color */
+      }
+
+      #historyList::-webkit-scrollbar-track {
+        background: #f1f1f1; /* track background */
+      }
+
+      body.dark #historyList::-webkit-scrollbar-track {
+        background: #2a2a2a;
+      }
+
+      body.dark #historyList::-webkit-scrollbar-thumb {
+        background: #666;
+      }
     </style>
   </head>
   <body>
@@ -250,29 +358,36 @@
     <button class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">
       🌙
     </button>
+    <div id="historySection">
+      <div id="historyToggle">
+        <span>📂 History</span><span id="toggleArrow">⬇️</span>
+      </div>
+      <div id="historyList"></div>
+    </div>
 
     <div class="pulse-wrapper">
       <div class="card-layout">
-        <div class="container">
-          <h1>🩻 <strong>X-ray Classifier</strong></h1>
-          <div id="dropArea">
-            Drag & drop image here or click to upload
-            <input
-              type="file"
-              id="imageInput"
-              accept="image/*"
-              style="display: none"
-            />
+        <div class="classifier-wrapper">
+          <div class="container">
+            <h1>🩻 <strong>X-ray Classifier</strong></h1>
+            <div id="dropArea">
+              Drag & drop image here or click to upload
+              <input
+                type="file"
+                id="imageInput"
+                accept="image/*"
+                style="display: none"
+              />
+            </div>
+
+            <div class="file-info" id="fileName"></div>
+            <button onclick="predict()">Predict</button>
+            <button onclick="clearImage()">Clear</button>
+            <div id="result"></div>
           </div>
-
-          <div class="file-info" id="fileName"></div>
-          <button onclick="predict()">Predict</button>
-          <button onclick="clearImage()">Clear</button>
-          <div id="result"></div>
-        </div>
-
-        <div class="image-side" id="previewBox">
-          <img id="imagePreview" src="" />
+          <div class="image-side" id="previewBox">
+            <img id="imagePreview" src="" />
+          </div>
         </div>
       </div>
     </div>
@@ -326,7 +441,12 @@
         reader.onload = function (e) {
           imagePreview.src = e.target.result;
           imagePreview.style.display = "block";
-          previewBox.style.display = "flex";
+          previewBox.style.visibility = "visible";
+          previewBox.style.opacity = "0";
+          setTimeout(() => {
+            previewBox.style.transition = "opacity 0.3s ease";
+            previewBox.style.opacity = "1";
+          }, 10);
         };
         reader.readAsDataURL(file);
       }
@@ -382,6 +502,29 @@
               }</strong></p>
             </div>
           `;
+          const historyList = document.getElementById("historyList");
+
+          const item = document.createElement("div");
+          item.className = "history-item";
+          item.innerHTML = `<strong>${data.class}</strong> <span style="float:right">⬇️</span>`;
+
+          const details = document.createElement("div");
+          details.className = "history-details";
+          details.innerHTML = `
+  🕒 ${new Date().toLocaleString()}<br/>
+  📁 ${uploadedFile.name}<br/>
+  Confidence: ${(data.confidence * 100).toFixed(1)}%
+`;
+
+          item.addEventListener("click", () => {
+            const expanded = details.style.display === "block";
+            details.style.display = expanded ? "none" : "block";
+            item.querySelector("span").textContent = expanded ? "⬇️" : "⬆️";
+          });
+
+          // Insert at the top of the list
+          historyList.prepend(details);
+          historyList.prepend(item);
         } catch (err) {
           console.error(err);
           resultDiv.innerHTML = "❌ Error contacting backend.";
@@ -403,6 +546,54 @@
         document.body.classList.add("dark");
         document.querySelector(".dark-toggle").innerText = "☀️";
       }
+      document.getElementById("historyToggle").addEventListener("click", () => {
+        const list = document.getElementById("historyList");
+        const arrow = document.getElementById("toggleArrow");
+        const expanded = list.style.display === "block";
+        list.style.display = expanded ? "none" : "block";
+        arrow.textContent = expanded ? "⬇️" : "⬆️";
+      });
+
+      async function loadHistory() {
+        try {
+          const res = await fetch(`${API}/history`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
+          const data = await res.json();
+          const historyList = document.getElementById("historyList");
+          historyList.innerHTML = "";
+
+          data.forEach((entry, index) => {
+            const item = document.createElement("div");
+            item.className = "history-item";
+            item.innerHTML = `<strong>${entry.class}</strong> <span style="float:right">⬇️</span>`;
+
+            const details = document.createElement("div");
+            details.className = "history-details";
+            details.innerHTML = `🕒 ${new Date(
+              entry.timestamp
+            ).toLocaleString()}<br/>📁 ${entry.filename}<br/>Confidence: ${(
+              entry.confidence * 100
+            ).toFixed(1)}%`;
+
+            item.addEventListener("click", () => {
+              const expanded = details.style.display === "block";
+              details.style.display = expanded ? "none" : "block";
+              item.querySelector("span").textContent = expanded ? "⬇️" : "⬆️";
+            });
+
+            historyList.appendChild(item);
+            historyList.appendChild(details);
+          });
+        } catch (err) {
+          console.error("Error loading history:", err);
+          document.getElementById("historyList").innerText =
+            "Failed to load history.";
+        }
+      }
+      loadHistory();
     </script>
   </body>
 </html>

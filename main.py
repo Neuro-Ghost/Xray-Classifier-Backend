@@ -9,7 +9,7 @@ from database import save_prediction
 from utils import preprocess_image
 from auth import router as auth_router
 from fastapi.staticfiles import StaticFiles
-
+from database import get_user_predictions
 
 # Load Model
 model_path = hf_hub_download(
@@ -75,3 +75,15 @@ async def predict(
     )
 
     return {"class": class_names[pred_index], "confidence": round(confidence, 4)}
+
+
+@app.get("/history")
+def get_history(user_data: dict = Depends(verify_token)):
+    email = user_data.get("sub")
+    user_history = get_user_predictions(email)
+
+    for item in user_history:
+        item["_id"] = str(item["_id"])  # Convert ObjectId to string
+        item["timestamp"] = item["timestamp"].isoformat()  # Convert to readable string
+
+    return user_history
