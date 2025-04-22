@@ -5,7 +5,10 @@ import numpy as np
 from utils import preprocess_image
 from huggingface_hub import hf_hub_download
 
-model_path = hf_hub_download(repo_id="atoxy/xray-classifier-model", filename="xray_model.h5")
+
+model_path = hf_hub_download(
+    repo_id="atoxy/xray-classifier-model", filename="xray_model.h5"
+)
 model = tf.keras.models.load_model(model_path)
 app = FastAPI()
 
@@ -17,12 +20,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-model = tf.keras.models.load_model("model/xray_model.h5")
-class_names = ["Normal", "COVID", "Pneumonia"]
+
+class_names = ["COVID", "Normal", "Pneumonia"]
+
 
 @app.get("/")
 def home():
+    print("X-ray Classifier is running.")
     return {"message": "X-ray Classifier is running."}
+
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
@@ -31,7 +37,4 @@ async def predict(file: UploadFile = File(...)):
     predictions = model.predict(img_array)
     pred_index = np.argmax(predictions[0])
     confidence = float(np.max(predictions[0]))
-    return {
-        "class": class_names[pred_index],
-        "confidence": round(confidence, 4)
-    }
+    return {"class": class_names[pred_index], "confidence": round(confidence, 4)}
