@@ -11,12 +11,92 @@
       body {
         font-family: "Segoe UI", sans-serif;
         background: #f9f9f9;
+        color: #333;
         margin: 0;
         padding: 0;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      body.dark {
+        background: #121212;
+        color: #eee;
+      }
+
+      .logout-btn,
+      .dark-toggle {
+        position: absolute;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 999;
+        color: white;
+        font-weight: bold;
+        background-color: #555;
+        transition: background 0.3s ease;
+      }
+
+      .logout-btn {
+        top: 20px;
+        right: 30px;
+        background-color: #dc3545;
+      }
+
+      .dark-toggle {
+        top: 20px;
+        left: 30px;
+        font-size: 20px;
+        background-color: #333;
+      }
+
+      .pulse-wrapper {
+        position: relative;
+        display: inline-block;
+        padding: 30px;
+      }
+
+      .pulse-wrapper::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 600px;
+        height: 600px;
+        background-color: transparent;
+        border: 3px dashed #4caf50;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        animation: pulseBox 2s infinite ease-in-out;
+        z-index: 0;
+        opacity: 0.5;
+      }
+
+      @keyframes pulseBox {
+        0% {
+          transform: translate(-50%, -50%) scale(0.9);
+          opacity: 0.5;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.05);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(0.9);
+          opacity: 0.5;
+        }
+      }
+
+      .card-layout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+        position: relative;
+        z-index: 1;
       }
 
       .container {
@@ -26,11 +106,35 @@
         box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
         text-align: center;
         width: 400px;
+        position: relative;
+        z-index: 1;
+        transition: background 0.3s ease;
+      }
+
+      body.dark .container {
+        background: #1e1e1e;
+        box-shadow: 0 0 25px rgba(255, 255, 255, 0.05);
+      }
+
+      .image-side {
+        display: none;
+      }
+
+      .image-side img {
+        max-width: 250px;
+        max-height: 250px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
       }
 
       h1 {
         color: #222;
         margin-bottom: 20px;
+      }
+
+      body.dark h1 {
+        color: #fff;
       }
 
       #dropArea {
@@ -42,10 +146,13 @@
         color: #333;
         margin-bottom: 20px;
         transition: 0.3s ease;
+        position: relative;
+        z-index: 1;
       }
 
-      #dropArea.dragover {
-        background-color: #e1fce1;
+      body.dark #dropArea {
+        background-color: #1a1a1a;
+        color: #eee;
       }
 
       button {
@@ -56,6 +163,7 @@
         border-radius: 6px;
         cursor: pointer;
         font-size: 16px;
+        margin: 10px 5px;
       }
 
       button:hover {
@@ -69,70 +177,170 @@
         line-height: 1.6;
       }
 
+      body.dark #result {
+        color: #ccc;
+      }
+
       .file-info {
         font-size: 14px;
         color: #888;
         margin-bottom: 10px;
       }
+
+      .confidence-chart {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      .circular-chart {
+        display: block;
+        margin: 10px auto;
+        max-width: 100px;
+        max-height: 100px;
+      }
+
+      .circle-bg {
+        fill: none;
+        stroke: #eee;
+        stroke-width: 2;
+      }
+
+      .circle {
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        animation: progress 1.4s ease-out forwards;
+        transform: rotate(-90deg);
+        transform-origin: center;
+      }
+
+      .circular-chart.covid .circle {
+        stroke: #e53935;
+      }
+
+      .circular-chart.normal .circle {
+        stroke: #4caf50;
+      }
+
+      .circular-chart.pneumonia .circle {
+        stroke: #2196f3;
+      }
+
+      .percentage {
+        fill: #333;
+        font-size: 0.47em;
+        text-anchor: middle;
+      }
+
+      body.dark .percentage {
+        fill: #eee;
+      }
+
+      @keyframes progress {
+        0% {
+          stroke-dasharray: 0 100;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>🩻 X-ray Classifier</h1>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+    <button class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">
+      🌙
+    </button>
 
-      <div id="dropArea">
-        Drag & drop image here or click to upload
-        <input
-          type="file"
-          id="imageInput"
-          accept="image/*"
-          style="display: none"
-        />
+    <div class="pulse-wrapper">
+      <div class="card-layout">
+        <div class="container">
+          <h1>🩻 <strong>X-ray Classifier</strong></h1>
+          <div id="dropArea">
+            Drag & drop image here or click to upload
+            <input
+              type="file"
+              id="imageInput"
+              accept="image/*"
+              style="display: none"
+            />
+          </div>
+
+          <div class="file-info" id="fileName"></div>
+          <button onclick="predict()">Predict</button>
+          <button onclick="clearImage()">Clear</button>
+          <div id="result"></div>
+        </div>
+
+        <div class="image-side" id="previewBox">
+          <img id="imagePreview" src="" />
+        </div>
       </div>
-
-      <div class="file-info" id="fileName"></div>
-      <button onclick="predict()">Predict</button>
-
-      <div id="result"></div>
     </div>
 
     <script>
+      const API = "http://127.0.0.1:8000";
+
+      if (!localStorage.getItem("token")) {
+        window.location.href = "login.html";
+      }
+
+      function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      }
+
       const dropArea = document.getElementById("dropArea");
       const fileInput = document.getElementById("imageInput");
       const fileName = document.getElementById("fileName");
-      let uploadedFile = null; // 🟢 Store the file here
+      const resultDiv = document.getElementById("result");
+      const imagePreview = document.getElementById("imagePreview");
+      const previewBox = document.getElementById("previewBox");
+
+      let uploadedFile = null;
+
+      window.addEventListener("dragover", (e) => e.preventDefault());
+      window.addEventListener("drop", (e) => e.preventDefault());
 
       dropArea.addEventListener("click", () => fileInput.click());
 
-      dropArea.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        dropArea.classList.add("dragover");
-      });
-
-      dropArea.addEventListener("dragleave", () => {
-        dropArea.classList.remove("dragover");
-      });
-
       dropArea.addEventListener("drop", (e) => {
         e.preventDefault();
-        dropArea.classList.remove("dragover");
-
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-          uploadedFile = files[0]; // 🟢 Store the dropped file
+          uploadedFile = files[0];
           fileName.textContent = `📁 Selected: ${uploadedFile.name}`;
+          showPreview(uploadedFile);
         }
       });
 
       fileInput.addEventListener("change", () => {
         if (fileInput.files.length > 0) {
-          uploadedFile = fileInput.files[0]; // 🟢 Store the selected file
+          uploadedFile = fileInput.files[0];
           fileName.textContent = `📁 Selected: ${uploadedFile.name}`;
+          showPreview(uploadedFile);
         }
       });
 
+      function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          imagePreview.src = e.target.result;
+          imagePreview.style.display = "block";
+          previewBox.style.display = "flex";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function clearImage() {
+        uploadedFile = null;
+        fileInput.value = "";
+        fileName.textContent = "";
+        imagePreview.src = "";
+        previewBox.style.display = "none";
+        resultDiv.innerHTML = "";
+      }
+
       async function predict() {
-        const resultDiv = document.getElementById("result");
         resultDiv.innerHTML = "⏳ Predicting...";
 
         if (!uploadedFile) {
@@ -141,28 +349,59 @@
         }
 
         const formData = new FormData();
-        formData.append("file", uploadedFile); // ✅ Use the right file
+        formData.append("file", uploadedFile);
 
         try {
-          const res = await fetch("http://127.0.0.1:8000/predict", {
+          const res = await fetch(`${API}/predict`, {
             method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
             body: formData,
           });
 
           const data = await res.json();
+          const percent = (data.confidence * 100).toFixed(2);
 
           resultDiv.innerHTML = `
-            🔍 <strong>Predicted:</strong> <span style="color:#4CAF50">${
-              data.class
-            }</span><br>
-            📊 <strong>Confidence:</strong> ${(data.confidence * 100).toFixed(
-              2
-            )}%
+            <div class="confidence-chart">
+              <svg viewBox="0 0 36 36" class="circular-chart ${data.class.toLowerCase()}">
+                <path class="circle-bg"
+                      d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <path class="circle"
+                      stroke-dasharray="${percent}, 100"
+                      d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <text x="18" y="20.35" class="percentage">${percent}%</text>
+              </svg>
+              <p class="prediction-label">🔍 Predicted: <strong>${
+                data.class
+              }</strong></p>
+            </div>
           `;
         } catch (err) {
           console.error(err);
           resultDiv.innerHTML = "❌ Error contacting backend.";
         }
+      }
+
+      function toggleDark() {
+        document.body.classList.toggle("dark");
+        const icon = document.querySelector(".dark-toggle");
+        icon.innerText = document.body.classList.contains("dark") ? "☀️" : "🌙";
+        localStorage.setItem(
+          "theme",
+          document.body.classList.contains("dark") ? "dark" : "light"
+        );
+      }
+
+      // Load saved theme
+      if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+        document.querySelector(".dark-toggle").innerText = "☀️";
       }
     </script>
   </body>
