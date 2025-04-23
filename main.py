@@ -68,7 +68,7 @@ async def predict(
     pred_index = np.argmax(predictions[0])
     confidence = float(np.max(predictions[0]))
     save_prediction(
-        email=user_data.get("sub"),  # email from JWT
+        email=user_data.get("email"),  # email from JWT
         predicted_class=class_names[pred_index],
         confidence=round(confidence, 4),
         filename=file.filename,
@@ -79,7 +79,7 @@ async def predict(
 
 @app.get("/history")
 def get_history(user_data: dict = Depends(verify_token)):
-    email = user_data.get("sub")
+    email = user_data.get("email")
     user_history = get_user_predictions(email)
 
     for item in user_history:

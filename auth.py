@@ -39,9 +39,10 @@ def hash_password(password: str) -> bytes:
 
 
 # === Token Generation ===
-def create_token(user_id: str):
+def create_token(user_id: str, email: str):
     payload = {
         "user_id": user_id,
+        "email": email,
         "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
@@ -51,22 +52,22 @@ def create_token(user_id: str):
 security = HTTPBearer()
 
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    try:
-        payload = jwt.decode(
-            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
-        )
-        user = users.find_one({"_id": payload["user_id"]})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return str(user["_id"])
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+# def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+#     try:
+#         payload = jwt.decode(
+#             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
+#         )
+#         user = users.find_one({"_id": payload["user_id"]})
+#         if not user:
+#             raise HTTPException(status_code=401, detail="User not found")
+#         return str(user["_id"])
+#     except jwt.ExpiredSignatureError:
+#         raise HTTPException(status_code=401, detail="Token expired")
+#     except jwt.InvalidTokenError:
+#         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-# === ROUTES ===
+# # === ROUTES ===
 
 
 @router.post("/signup")
@@ -100,5 +101,5 @@ async def login(request: Request):
     if not bcrypt.checkpw(password.encode("utf-8"), db_user["password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_token(str(db_user["_id"]))
+    token = create_token(str(db_user["_id"]), db_user["email"])
     return {"token": token, "message": "Login successful"}
