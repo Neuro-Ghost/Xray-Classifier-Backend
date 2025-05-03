@@ -4,3 +4,7 @@ tensorflow
 python-multipart
 pillow
 huggingface_hub
+pyhton-jose
+pymongo
+bcrypt
+PyJWT>=2.0

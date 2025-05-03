@@ -75,7 +75,7 @@ def signup(user: SignupRequest):
     if users.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="User already exists")
 
-    hashed_pw = hash_password(user.password)
+    hashed_pw = hash_password(user.password).decode("utf-8")
     users.insert_one(
         {
             "email": user.email,

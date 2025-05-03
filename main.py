@@ -10,6 +10,7 @@ from utils import preprocess_image
 from auth import router as auth_router
 from fastapi.staticfiles import StaticFiles
 from database import get_user_predictions
+import uvicorn
 
 # Load Model
 model_path = hf_hub_download(
@@ -87,3 +88,6 @@ def get_history(user_data: dict = Depends(verify_token)):
         item["timestamp"] = item["timestamp"].isoformat()  # Convert to readable string
 
     return user_history
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
